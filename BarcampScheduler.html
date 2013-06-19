@@ -1,13 +1,218 @@
 <head>
-  <title>BarcampScheduler</title>
+	<title>BarcampScheduler</title>
+	<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
+	<script src="jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="//use.typekit.net/kjq8nwu.js"></script>
+	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 
 <body>
-  {{> hello}}
+
+	<header>
+		<h1 class="logo"></h1>
+	</header>
+
+	{{> layout}}
 </body>
 
-<template name="hello">
-  <h1>Hello World!</h1>
-  {{greeting}}
-  <input type="button" value="Click" />
+<template name="layout">
+	{{#if isAdmin}}
+
+	<link href="admin.css" rel="stylesheet" type="text/css">
+	
+	<div class="container admin tracks-{{trackscount}}">
+
+		{{> controls}}
+		{{> tracknames}}
+
+		<div class="schedule">
+			{{> talks}}
+			{{> slots}}
+		</div>
+
+		{{> export}}
+
+	</div>
+
+	{{else}}
+
+		<div class="container public tracks-{{trackscount}}">
+			{{> tracknames}}
+			{{> listing}}}
+		</div>
+
+	{{/if}}
+</template>
+
+<template name="listing">
+	<div class="listing">
+		{{#each slots}}
+			{{> listingslot}}
+		{{/each}}
+	</div>
+</template>
+
+<template name="listingslot">
+	{{! #if slot_hidden}}
+	<section class="listingslot slot-{{slot_number}}">
+
+		<div class="slot {{slot_class}}">
+			{{> slot}}
+		</div>
+
+		{{#each talks}}
+			{{> talk}}
+		{{/each}}
+
+	</section>
+	{{! /if}}
+</template>
+
+<template name="controls">
+	{{#if isAdding}}
+		<a href="#" class="cancel-talk">X</a>
+		<div id="new_talk" class="form">
+			<h2>{{header}}</h2>
+			<label>
+				<input type="text" name="title" placeholder="Enter Title" value="{{title}}">
+			</label>
+			<label>
+				<input type="text" name="name" placeholder="Enter Name" value="{{talkname}}">
+			</label>
+			<label>
+				<textarea name="description" placeholder="Enter Description">{{description}}</textarea>
+			</label>
+			<div class="button">
+				<button class="cancel">Cancel <span>X</span></button>
+				<button class="save">Save <span>W</span></button>
+			</div>
+		</div>
+	{{else}}
+		<address>Follow along at <strong>barcamp.bkit.ca</strong></address>
+		<a href="#" class="add-talk">Z</a>
+		<a href="#" class="export-db">/</a>
+	{{/if}}
+</template>
+
+<template name="tracknames">
+	<div class="talks tracks-{{trackscount}}">
+		{{#each tracks}}
+			<h2>{{name}}</h2>
+		{{/each}}
+	</div>
+</template>
+
+<template name="talks">
+	{{#each talks}}
+		{{> talk}}
+	{{/each}}
+</template>
+
+<template name="slots">
+
+	{{#if isAdmin}}
+		<a href="#" class="add-slot">Z</a>
+	{{/if}}
+
+	<ul class="slots">
+		{{#each slots}}
+			<li>
+				{{> slot}}
+			</li>
+		{{/each}}
+	</ul>
+</template>
+
+<template name="slot">
+	{{#if editing}}
+	{{#if isAdmin}}
+		<form method="get" action="/">
+			<input type="text" name="start" value="{{start}}" placeholder="h:mm"> to 
+			<input type="text" name="end" value="{{end}}" placeholder="h:mm">
+			<button type="submit">W</button>
+			<button class="cancel">X</button>
+		</form>
+
+		{{else}}
+			<strong>{{start}}</strong> to <strong>{{end}}</strong>
+		{{/if}}
+	{{else}}
+		<strong>{{start}}</strong> to <strong>{{end}}</strong>
+
+		{{#if isAdmin}}
+			<a href="#" class="edit">&amp;</a>
+			<a href="#" class="delete">Y</a>
+		{{/if}}
+
+	{{/if}}
+</template>
+
+<template name="talk">
+	{{#if track_single}}
+		<div class="talk slot-{{slot}} track-{{track}}" style="{{position}}">
+
+			<p class="track">{{track_name}}</p>
+			<p class="title">{{title}}</p>
+			<p class="name">{{name}}</p>
+
+			{{#if has_description}}
+			<p class="description">{{description}}</p>
+			{{/if}}
+		
+			{{#if isAdmin}}
+				<button>for dragging, since custom events suck</button>
+				<a href="#" class="edit">&amp;</a>
+				<!-- <a href="#" class="expand">&Ntilde;</a> -->
+				<a href="#" class="delete">Y</a>
+			{{/if}}
+
+		</div>
+	{{/if}}
+
+	{{#if track_all}}
+		<div class="talk track-all slot-{{slot}}" style="{{position}}">
+			
+			<p class="track">{{track_name}}</p>
+			<p class="title">{{title}}</p>
+			<p class="name">{{name}}</p>
+
+			{{#if has_description}}
+			<p class="description">{{description}}</p>
+			{{/if}}
+
+			{{#if isAdmin}}
+				<button>for dragging, since custom events suck</button>
+				<a href="#" class="edit">&amp;</a>
+				<!-- <a href="#" class="expand">&Ntilde;</a> -->
+				<a href="#" class="delete">Y</a>
+			{{/if}}
+
+		</div>
+	{{/if}}
+
+	{{#if track_special}}
+		<div class="talk-special slot-{{slot}}" style="{{position}}">
+			<span>{{name}}</span>
+
+			{{#if has_description}}
+			<p class="description">{{description}}</p>
+			{{/if}}
+		</div>
+	{{/if}}
+</template>
+
+<template name="export">
+
+<pre class="export">
+{{#each slots}}
+Slots.insert({slot: {{slot}},  start: {{start}}, end: {{end}} });{{/each}}
+
+{{#each tracks}}
+Tracks.insert({name: "{{name}}", track: {{track}} });{{/each}}
+
+{{#each talks}}
+Talks.insert({name: "{{name}}", title: "{{title}}", description: "{{description}}", track: {{track}}, slot: {{slot}} });{{/each}}
+</pre>
+
 </template>
